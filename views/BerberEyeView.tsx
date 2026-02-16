@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SectionHeader from '../components/SectionHeader.tsx';
 import { LANDMARKS } from '../constants.tsx';
-import { Landmark } from '../types.ts';
+import { Landmark } from '../types';
 import Loader from '../components/LoadingSpinner.tsx';
 
 // --- Helper function to calculate distance between two lat/lng points ---
@@ -156,14 +156,14 @@ const BerberEyeView: React.FC = () => {
                         <div className="absolute inset-0 z-20 p-4 flex flex-col justify-between">
                             <div className="w-full max-w-xs space-y-2">
                                 {detectedLandmark.infoCards.map((card, i) => (
-                                    <InfoCard key={i} title={card.title} content={card.content} delay={`${0.2 + i * 0.2}s`} />
+                                    <InfoCard key={i} title={card.title} content={card.content} delay={`\${0.2 + i * 0.2}s`} />
                                 ))}
                             </div>
                             <div>
                                 <button onClick={handleReset} className="bg-neutral-slate-dark/50 backdrop-blur-sm px-4 py-2 rounded-full text-sm hover:bg-neutral-slate-dark">Scan Again</button>
                             </div>
                             {detectedLandmark.hotspots.map((hotspot, i) => (
-                                <Hotspot key={i} top={hotspot.top} left={hotspot.left} onClick={() => alert(hotspot.content)} delay={`${1 + i * 0.2}s`} />
+                                <Hotspot key={i} top={hotspot.top} left={hotspot.left} onClick={() => alert(hotspot.content)} delay={`\${1 + i * 0.2}s`} />
                             ))}
                         </div>
                     )}
