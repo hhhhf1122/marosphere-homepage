@@ -1,0 +1,8 @@
+{
+  "name": "MarocSphere",
+  "description": "An AI-native luxury travel ecosystem for Morocco that seamlessly integrates verified experiences, predictive planning, and artisan commerce into a single, indispensable travel companion.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
