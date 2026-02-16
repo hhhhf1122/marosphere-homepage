@@ -153,63 +153,68 @@ export const refineItinerary = async (currentItinerary: Itinerary, changeRequest
     const verifiedAccommodations = ACCOMMODATIONS.filter(a => a.isVerified).map(a => ({ name: a.name, type: a.type, location: a.location }));
 
   if (!ai) {
-    // Mock refinement for demo
-    const updatedItinerary = { ...currentItinerary };
-    updatedItinerary.description += `
-
-Refined based on request: "${changeRequest}"`;
-    return Promise.resolve(updatedItinerary);
+    // Mock refinement for demo purposes
+    const newItinerary = JSON.parse(JSON.stringify(currentItinerary)); // Deep copy
+    newItinerary.days[0].activities.push({
+        time: "Late Night",
+        description: `(Mocked Edit): Added based on your request: "${changeRequest}" at Hassan Alami's workshop.`,
+        type: 'Activity'
+    });
+    return Promise.resolve(newItinerary);
   }
 
-  const prompt = `
-    You are refining an existing itinerary for MarocSphere.
+  const refinementPrompt = `
+    You are the "MarocSphere AI Travel Genie," acting as an itinerary editor for trips focused on MARRAKECH. Your primary goal is to refine itineraries to showcase MarocSphere's network of VERIFIED partners in and around Marrakech.
 
-    Current Itinerary:
+    Your client has an existing itinerary and wants to make a change.
+    This is the client's change request: "${changeRequest}"
+
+    This is the CURRENT itinerary in JSON format:
     ${JSON.stringify(currentItinerary, null, 2)}
 
-    Client Request: "${changeRequest}"
+    This is your network of VERIFIED MarocSphere partners. You MUST prioritize these partners when making modifications.
+    VERIFIED ACCOMMODATIONS: ${JSON.stringify(verifiedAccommodations, null, 2)}
+    VERIFIED GUIDES: ${JSON.stringify(verifiedGuides, null, 2)}
+    VERIFIED ARTISANS: ${JSON.stringify(verifiedArtisans, null, 2)}
 
-    Your network of VERIFIED MarocSphere partners is listed below. You MUST prioritize and integrate these specific partners into the itinerary wherever relevant. When recommending a hotel, guide, or artisan experience, explicitly name them in the activity description.
-
-    VERIFIED ACCOMMODATIONS:
-    ${JSON.stringify(verifiedAccommodations, null, 2)}
-
-    VERIFIED GUIDES:
-    ${JSON.stringify(verifiedGuides, null, 2)}
-
-    VERIFIED ARTISANS (for shopping or activity recommendations):
-    ${JSON.stringify(verifiedArtisans, null, 2)}
-
-    Your task:
-    1.  Refine the itinerary according to the client's request.
-    2.  Explicitly mention verified partners in the 'description' of activities. For example: "Private guided tour of the Majorelle Garden with Leila Alaoui." or "Check into your luxury suite at Riad Yasmine."
-    3.  Ensure the itinerary remains logical, inspiring, and reflects the client's style and interests.
-    4.  Produce a JSON output that strictly adheres to the provided schema. Do not output any other text or markdown.
+    Your task is to intelligently modify the JSON itinerary based on the user's request and return the FULL, updated itinerary.
+    - If they want to add an activity, find the best day and time to fit it in, preferably involving a verified partner.
+    - When fulfilling a request, explicitly mention the verified partner's name in the description.
+    - You MUST return only the complete, modified JSON object that adheres to the original schema. Do not add any commentary or markdown.
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: prompt,
+      contents: refinementPrompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: itinerarySchema,
-        temperature: 0.8,
-        topP: 0.9,
+        temperature: 0.7,
       },
     });
-
     const jsonText = response.text?.trim() ?? '{}';
     const itineraryData = JSON.parse(jsonText);
-
-    // Basic validation
-    if (!itineraryData.title || !itineraryData.days || !Array.isArray(itineraryData.days)) {
-        throw new Error("Invalid itinerary structure received from API.");
+    if (!itineraryData.title || !itineraryData.days) {
+        throw new Error("Invalid refined itinerary structure received from API.");
     }
-
     return itineraryData as Itinerary;
   } catch (error) {
     console.error("Error refining itinerary with Gemini:", error);
-    throw new Error("Failed to communicate with the AI Travel Genie.");
+    throw new Error("Failed to communicate with the AI Travel Genie for refinement.");
   }
+};
+
+export const getDailyTip = async (): Promise<string> => {
+    if (!ai) return Promise.resolve("Always bargain with a smile, it's part of the fun!");
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: "Provide a single, short, culturally relevant travel tip for a luxury tourist in Marrakech. It should be one sentence. For example: 'When buying a carpet, always accept the initial offer of mint tea.'",
+        });
+        return response.text?.trim() || "Enjoy the vibrant colors and sounds of the souk!";
+    } catch (error) {
+        console.error("Error fetching daily tip:", error);
+        return "Always bargain with a smile, it's part of the fun!";
+    }
 };
